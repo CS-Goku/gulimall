@@ -1,0 +1,17 @@
+package com.atguigu.gulimall.member.dao;
+
+import com.atguigu.gulimall.member.entity.IntegrationChangeHistoryEntity;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 积分变化历史记录
+ * 
+ * @author lufei
+ * @email 790002348@qq.com
+ * @date 2021-08-08 16:04:06
+ */
+@Mapper
+public interface IntegrationChangeHistoryDao extends BaseMapper<IntegrationChangeHistoryEntity> {
+	
+}

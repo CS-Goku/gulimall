@@ -18,17 +18,17 @@ import java.util.Map;
 @RestController
 public class OssController {
 
+    //就不用创建OSSClient实例了
     @Autowired
     OSS ossClient;
 
+    //从application.yml中获取信息
     @Value("${spring.cloud.alicloud.oss.endpoint}")
     private String endpoint;
     @Value("${spring.cloud.alicloud.oss.bucket}")
     private String bucket;
-
     @Value("${spring.cloud.alicloud.access-key}")
     private String accessId;
-
     @RequestMapping("/oss/policy")
     public R policy(){
 

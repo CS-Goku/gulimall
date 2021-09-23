@@ -74,6 +74,6 @@ public class OssController {
 
     public static void main(String[] args) {
 
-        System.out.println("测试git push github and gitee");
+        System.out.println("测试git push github and gitee1");
     }
 }

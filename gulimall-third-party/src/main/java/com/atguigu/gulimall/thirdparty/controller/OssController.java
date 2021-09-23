@@ -71,4 +71,9 @@ public class OssController {
         }
         return R.ok().put("data",respMap);
     }
+
+    public static void main(String[] args) {
+
+        System.out.println("测试git push github and gitee");
+    }
 }

@@ -28,6 +28,7 @@ public class BrandEntity implements Serializable {
 
 	/**
 	 * 品牌id
+	 * 分组校验：新增时不需要带id，修改时必须带id
 	 */
 	@NotNull(message = "修改必须指定品牌id",groups = {UpdateGroup.class})
 	@Null(message = "新增不能指定id",groups = {AddGroup.class})

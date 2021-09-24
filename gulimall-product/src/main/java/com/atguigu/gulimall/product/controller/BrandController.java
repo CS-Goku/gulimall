@@ -88,6 +88,7 @@ public class BrandController {
 
     /**
      * 修改
+     * 分组校验
      */
     @RequestMapping("/update")
     //@RequiresPermissions("product:brand:update")

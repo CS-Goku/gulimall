@@ -11,11 +11,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
-
+/*
+统一异常处理@ExceptionHandler
+ */
 @Slf4j
 @RestControllerAdvice(basePackages = "com.atguigu.gulimall.product.controller")
 public class GulimallExceptionControllerAdvice {
 
+    //实体字段注解的校验规则
     @ExceptionHandler(value = Exception.class) // 也可以返回ModelAndView
     public R handleValidException(MethodArgumentNotValidException exception){
 
@@ -34,6 +37,7 @@ public class GulimallExceptionControllerAdvice {
         return R.error(BizCodeEnume.VAILD_EXCEPTION.getCode(),BizCodeEnume.VAILD_EXCEPTION.getMsg()).put("data",map);
     }
 
+    //更大范围的未知异常处理
     @ExceptionHandler(value = Throwable.class)
     public R handleException(Throwable throwable){
 

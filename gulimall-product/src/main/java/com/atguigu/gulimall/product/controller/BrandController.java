@@ -66,6 +66,8 @@ public class BrandController {
     @RequestMapping("/save")
     //@RequiresPermissions("product:brand:save")
     public R save(@Validated({AddGroup.class})@RequestBody BrandEntity brand/*, BindingResult result*/){
+
+        //局部异常处理BindResul
 //        if( result.hasErrors()){
 //            Map<String,String> map=new HashMap<>();
 //            //1.获取错误的校验结果

@@ -19,7 +19,7 @@ import javax.validation.constraints.*;
  * 
  * @author lufei
  * @email 790002348@qq.com
- * @date 2021-08-08 15:58:03
+ * @date 2021-09-24 15:58:03
  */
 @Data
 @TableName("pms_brand")

@@ -83,6 +83,21 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return paths.toArray(new Long[paths.size()]);//把集合变数组
     }
 
+    /**
+     * 级联更新所有数据
+     * @param category
+     */
+    @Transactional//开启事务
+    @Override
+    public void updateCascade(CategoryEntity category) {
+        //先进行常规的更新自己
+        //updateById和update方法的区别，前者用于有实体主id根据id查，后者没主id，只能传入特定的更新条件
+        this.updateById(category);
+        //再更新冗余数据
+        categoryBrandRelationService.updateCategory(category.getCatId(),category.getName());
+
+    }
+
 
     //[255,25,2]
     //递归收集所有父分类
@@ -100,17 +115,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return paths;
     }
 
-
-//    /**
-//     * 级联更新所有关联的数据
-//     * @param category
-//     */
-//    @Transactional
-//    @Override
-//    public void updateCascade(CategoryEntity category) {
-//        this.updateById(category);
-//        categoryBrandRelationService.updateCategory(category.getCatId(),category.getName());
-//    }
 
 
     //递归查找所有菜单的子菜单

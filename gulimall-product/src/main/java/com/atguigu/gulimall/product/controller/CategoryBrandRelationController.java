@@ -70,7 +70,7 @@ public class CategoryBrandRelationController {
     @RequestMapping("/save")
     //@RequiresPermissions("product:categorybrandrelation:save")
     public R save(@RequestBody CategoryBrandRelationEntity categoryBrandRelation){
-        //只保存了品牌id和分类id，没有名字，关联查询名字消耗很大，不能使用
+        //只保存了品牌id和分类id，没有名字，但要是关联查询名字消耗很大，不能使用
 //		categoryBrandRelationService.save(categoryBrandRelation);
         //自己搞个保存方法，分步获取名字，把数据直接保存在实体里，在保存到数据库
         categoryBrandRelationService.saveDetail(categoryBrandRelation);

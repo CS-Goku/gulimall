@@ -85,6 +85,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     /**
      * 级联更新所有数据
+     *
      * @param category
      */
     @Transactional//开启事务
@@ -94,8 +95,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         //updateById和update方法的区别，前者用于有实体主id根据id查，后者没主id，只能传入特定的更新条件
         this.updateById(category);
         //再更新冗余数据
-        categoryBrandRelationService.updateCategory(category.getCatId(),category.getName());
-
+        categoryBrandRelationService.updateCategory(category.getCatId(), category.getName());
     }
 
 
@@ -107,14 +107,13 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         //搜索这个id的实体
         CategoryEntity byId = this.getById(catelogId);
         //找到这个实体的父id
-        if (byId.getParentCid()!=0){//不等于0就代表有父分类
+        if (byId.getParentCid() != 0) {//不等于0就代表有父分类
             //就继续查
-            findParentPath(byId.getParentCid(),paths);//查到一个放一个
+            findParentPath(byId.getParentCid(), paths);//查到一个放一个
         }
 
         return paths;
     }
-
 
 
     //递归查找所有菜单的子菜单

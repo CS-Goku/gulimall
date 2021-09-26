@@ -3,7 +3,9 @@ package com.atguigu.gulimall.product.service.impl;
 import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.Map;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -29,10 +31,10 @@ public class BrandServiceImpl extends ServiceImpl<BrandDao, BrandEntity> impleme
         //先查询所有
         QueryWrapper<BrandEntity> wrapper = new QueryWrapper<>();
         //再判断key有没有
-        if (!StringUtils.isEmpty(key)){
+        if (!StringUtils.isEmpty(key)) {
             //存在key,接着条件查询sql：select * from pms_brand WHERE brand_id = key or name = key;
-            wrapper.and((obj)->{
-                obj.eq("brand_id",key).or().like("name",key);
+            wrapper.and((obj) -> {
+                obj.eq("brand_id", key).or().like("name", key);
             });
         }
         //最后封装给page
@@ -52,11 +54,9 @@ public class BrandServiceImpl extends ServiceImpl<BrandDao, BrandEntity> impleme
         //如果其中有name改动，那么分类与品牌的关系表的品牌name也要更新，name是冗余字段
         //sql：error: UPDATE  SET 字段名 = 新值 WHERE 字段名 = 某值
         //UPDATE pms_category_brand_relation set brand_name = "华为1" WHERE brand_id = 2;
-        if(!StringUtils.isEmpty(brand.getName())){
-            categoryBrandRelationService.updateDetail(brand.getBrandId(),brand.getName());
+        if (!StringUtils.isEmpty(brand.getName())) {
+            categoryBrandRelationService.updateDetail(brand.getBrandId(), brand.getName());
         }
-
-
     }
 
 }

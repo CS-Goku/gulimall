@@ -73,14 +73,33 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     //[2,25,225]
     @Override
     public Long[] findCatelogPath(Long catelogId) {
+        //创建一个集合用来收集路径
         List<Long> paths = new ArrayList<>();
-        List<Long> parentPath = findParentPath(catelogId, paths);
+        //调用递归收集父分类
+        paths = findParentPath(catelogId, paths); //[255,25,2]
+        //反转一下
+        Collections.reverse(paths);
 
-        Collections.reverse(parentPath);
-
-
-        return parentPath.toArray(new Long[parentPath.size()]);
+        return paths.toArray(new Long[paths.size()]);//把集合变数组
     }
+
+
+    //[255,25,2]
+    //递归收集所有父分类
+    private List<Long> findParentPath(Long catelogId, List<Long> paths) {
+        //先把当前id放进集合
+        paths.add(catelogId);
+        //搜索这个id的实体
+        CategoryEntity byId = this.getById(catelogId);
+        //找到这个实体的父id
+        if (byId.getParentCid()!=0){//不等于0就代表有父分类
+            //就继续查
+            findParentPath(byId.getParentCid(),paths);//查到一个放一个
+        }
+
+        return paths;
+    }
+
 
 //    /**
 //     * 级联更新所有关联的数据
@@ -92,18 +111,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 //        this.updateById(category);
 //        categoryBrandRelationService.updateCategory(category.getCatId(),category.getName());
 //    }
-
-    //225,25,2
-    private List<Long> findParentPath(Long catelogId, List<Long> paths) {
-        //1、收集当前节点id
-        paths.add(catelogId);
-        CategoryEntity byId = this.getById(catelogId);
-        if (byId.getParentCid() != 0) {
-            findParentPath(byId.getParentCid(), paths);
-        }
-        return paths;
-
-    }
 
 
     //递归查找所有菜单的子菜单

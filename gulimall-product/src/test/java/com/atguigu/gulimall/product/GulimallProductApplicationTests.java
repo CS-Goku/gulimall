@@ -26,7 +26,7 @@ import java.util.List;
  * 2、配置key，endpoint相关信息即可
  * 3、使用OSSClient 进行相关操作
  */
-//@Slf4j
+@Slf4j//注入这个就可以用log打印到控制台
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class GulimallProductApplicationTests {
@@ -57,15 +57,16 @@ public class GulimallProductApplicationTests {
 //        System.out.println("上传成功。。");
 //    }
 
-//    @Autowired
-//    CategoryService categoryService;
-//
-//    @Test
-//    public void testFindPath(){
-//        Long[] catelogPath = categoryService.findCatelogPath(225L);
-//        log.info("完整路径：{}",Arrays.asList(catelogPath));
-//    }
 
+    //测试回显分类完整路径
+    @Autowired
+    CategoryService categoryService;
+
+    @Test
+    public void testFindPath(){
+        Long[] catelogPath = categoryService.findCatelogPath(225L);
+        log.info("完整路径：{}",Arrays.asList(catelogPath));
+    }
 
     @Test
     public void contextLoads() {

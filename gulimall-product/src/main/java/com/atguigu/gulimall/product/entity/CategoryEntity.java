@@ -63,7 +63,7 @@ public class CategoryEntity implements Serializable {
 	 */
 	private Integer productCount;
 
-	@JsonInclude(JsonInclude.Include.NON_EMPTY)
+	@JsonInclude(JsonInclude.Include.NON_EMPTY)//不为空的时候才返回该字段，返回到前端的这个实体数据什么都没有的化，分类的子分类空菜单就不显示
 	@TableField(exist=false)
 	private List<CategoryEntity> children;
 }

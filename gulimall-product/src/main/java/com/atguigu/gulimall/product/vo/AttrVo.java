@@ -2,13 +2,11 @@ package com.atguigu.gulimall.product.vo;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data
-@TableName("pms_attr")
 public class AttrVo implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -53,7 +51,6 @@ public class AttrVo implements Serializable {
     /**
      * 所属属性分类
      */
-    @TableField(exist=false)//不是数据库中的字段
     private Long attrGroupId;
 
 }

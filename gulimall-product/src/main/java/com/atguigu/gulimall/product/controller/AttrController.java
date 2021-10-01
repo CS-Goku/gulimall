@@ -28,11 +28,14 @@ public class AttrController {
     @Autowired
     private AttrService attrService;
 
-    //product/attr/base/list/{catelogId}查询规格参数列表
-    @GetMapping("/base/list/{catelogId}")
-    public R baseAttrList(@RequestParam Map<String, Object> params,@PathVariable("catelogId") Long catelogId){
+    // /product/attr/sale/list/{catelogId}查询销售属性列表
+    // /product/attr/base/list/{catelogId}查询基本属性列表
+    @GetMapping("/{attrType}/list/{catelogId}")
+    public R baseAttrList(@RequestParam Map<String, Object> params,
+                          @PathVariable("catelogId") Long catelogId,
+                          @PathVariable("attrType") String attrType){
 
-        PageUtils page = attrService.queryBaseAttrPage(params,catelogId);
+        PageUtils page = attrService.queryBaseAttrPage(params,catelogId,attrType);
         return R.ok().put("page",page);
     }
 
@@ -51,28 +54,7 @@ public class AttrController {
 
     /**
      * 信息
-     *
      * /product/attr/info/{attrId}
-     *
-     * 响应
-     * {
-     * 	"msg": "success",
-     * 	"code": 0,
-     * 	"attr": {
-     * 		"attrId": 4,
-     * 		"attrName": "aad",
-     * 		"searchType": 1,
-     * 		"valueType": 1,
-     * 		"icon": "qq",
-     * 		"valueSelect": "v;q;w",
-     * 		"attrType": 1,
-     * 		"enable": 1,
-     * 		"showDesc": 1,
-     * 		"attrGroupId": 1, //分组id
-     * 		"catelogId": 225, //分类id
-     * 		"catelogPath": [2, 34, 225] //分类完整路径
-     *        }
-     * }
      */
 
     @RequestMapping("/info/{attrId}")
@@ -80,7 +62,7 @@ public class AttrController {
     public R info(@PathVariable("attrId") Long attrId){
 //		AttrEntity attr = attrService.getById(attrId);
         //这个实体参数不够
-        AttrRespVo attr = attrService.getByIdInfo(attrId);
+        AttrRespVo attr = attrService.getAttrInfo(attrId);
         return R.ok().put("attr", attr);
     }
 
@@ -118,5 +100,7 @@ public class AttrController {
 
         return R.ok();
     }
+
+
 
 }

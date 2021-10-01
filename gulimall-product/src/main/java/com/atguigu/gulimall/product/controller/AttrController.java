@@ -3,6 +3,7 @@ package com.atguigu.gulimall.product.controller;
 import java.util.Arrays;
 import java.util.Map;
 
+import com.atguigu.gulimall.product.vo.AttrRespVo;
 import com.atguigu.gulimall.product.vo.AttrVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -50,12 +51,36 @@ public class AttrController {
 
     /**
      * 信息
+     *
+     * /product/attr/info/{attrId}
+     *
+     * 响应
+     * {
+     * 	"msg": "success",
+     * 	"code": 0,
+     * 	"attr": {
+     * 		"attrId": 4,
+     * 		"attrName": "aad",
+     * 		"searchType": 1,
+     * 		"valueType": 1,
+     * 		"icon": "qq",
+     * 		"valueSelect": "v;q;w",
+     * 		"attrType": 1,
+     * 		"enable": 1,
+     * 		"showDesc": 1,
+     * 		"attrGroupId": 1, //分组id
+     * 		"catelogId": 225, //分类id
+     * 		"catelogPath": [2, 34, 225] //分类完整路径
+     *        }
+     * }
      */
+
     @RequestMapping("/info/{attrId}")
     //@RequiresPermissions("product:attr:info")
     public R info(@PathVariable("attrId") Long attrId){
-		AttrEntity attr = attrService.getById(attrId);
-
+//		AttrEntity attr = attrService.getById(attrId);
+        //这个实体参数不够
+        AttrRespVo attr = attrService.getByIdInfo(attrId);
         return R.ok().put("attr", attr);
     }
 
@@ -76,9 +101,10 @@ public class AttrController {
      */
     @RequestMapping("/update")
     //@RequiresPermissions("product:attr:update")
-    public R update(@RequestBody AttrEntity attr){
-		attrService.updateById(attr);
+    public R update(@RequestBody AttrVo attr){
+//		attrService.updateById(attr);
 
+        attrService.updateAttr(attr);
         return R.ok();
     }
 

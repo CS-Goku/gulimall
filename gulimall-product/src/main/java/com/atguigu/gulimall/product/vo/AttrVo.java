@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
 
 import java.io.Serializable;
-
+/*
+冗余的
+ */
 @Data
 public class AttrVo implements Serializable {
     private static final long serialVersionUID = 1L;

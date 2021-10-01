@@ -7,6 +7,7 @@ import com.atguigu.gulimall.product.entity.AttrAttrgroupRelationEntity;
 import com.atguigu.gulimall.product.entity.AttrGroupEntity;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
 import com.atguigu.gulimall.product.service.AttrAttrgroupRelationService;
+import com.atguigu.gulimall.product.service.CategoryService;
 import com.atguigu.gulimall.product.vo.AttrRespVo;
 import com.atguigu.gulimall.product.vo.AttrVo;
 import org.springframework.beans.BeanUtils;
@@ -43,6 +44,8 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
     @Autowired
     private AttrGroupDao attrGroupDao;
 
+    @Autowired
+    private CategoryService categoryService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -61,7 +64,6 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
         AttrEntity attrEntity = new AttrEntity();
         //把数据拷贝过去
         BeanUtils.copyProperties(attr, attrEntity);
-        //保存,因为这里存里数据，所以实体里有attriId
         this.save(attrEntity);
 
         //需求2：保存属性、属性分组关联表数据,就要用到Vo实体
@@ -84,8 +86,6 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
 
         if (catelogId != 0) {
             wrapper.eq("catelog_id", catelogId);
-            IPage<AttrEntity> page = this.page(new Query<AttrEntity>().getPage(params), wrapper);
-            return new PageUtils(page);
         }
 
 
@@ -99,7 +99,10 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
 
 
         //最后封装到page返回
-        IPage<AttrEntity> page = this.page(new Query<AttrEntity>().getPage(params), wrapper);
+        IPage<AttrEntity> page = this.page(
+                new Query<AttrEntity>().getPage(params),
+                wrapper);
+
         PageUtils pageUtils = new PageUtils(page);
         //得到它获取到到记录
         List<AttrEntity> records = page.getRecords();
@@ -131,6 +134,64 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
 
         pageUtils.setList(respVos);
         return pageUtils;
+    }
+
+    @Override
+    public AttrRespVo getByIdInfo(Long attrId) {
+
+        AttrEntity attrEntity = this.getById(attrId);
+        AttrRespVo attrRespVo = new AttrRespVo();
+        BeanUtils.copyProperties(attrEntity, attrRespVo);
+
+        //设置所属属性分组名字，用属性id查关系表的分组id，查分组表的分组名字，然后设置
+        AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = attrAttrgroupRelationDao.selectOne(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_id", attrId));
+        if (attrAttrgroupRelationEntity != null) {
+            attrRespVo.setAttrGroupId(attrAttrgroupRelationEntity.getAttrGroupId());
+            AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrAttrgroupRelationEntity.getAttrGroupId());
+            if (attrGroupEntity != null) {
+                attrRespVo.setGroupName(attrGroupEntity.getAttrGroupName());
+            }
+        }
+
+        //设置所属分类完整路径,原实体获取分类id，然乎注入分类服务，使用之前写过的查完整路径的方法
+        Long catelogId = attrEntity.getCatelogId();
+        Long[] catelogPath = categoryService.findCatelogPath(catelogId);
+        attrRespVo.setCatelogPath(catelogPath);
+
+        CategoryEntity categoryEntity = categoryDao.selectById(catelogId);
+        if (categoryEntity != null) {
+            attrRespVo.setCatelogName(categoryEntity.getName());
+        }
+
+        return attrRespVo;
+    }
+
+    @Transactional
+    @Override
+    public void updateAttr(AttrVo attr) {
+        //先把基本数据改了
+        AttrEntity attrEntity = new AttrEntity();
+        BeanUtils.copyProperties(attr, attrEntity);
+        this.updateById(attrEntity);
+
+
+        //修改vo加进去的数据
+        AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = new AttrAttrgroupRelationEntity();
+
+        //要更新哪个值，先是设置好实体数据，后面再改到数据库
+        attrAttrgroupRelationEntity.setAttrGroupId(attr.getAttrGroupId());
+        attrAttrgroupRelationEntity.setAttrId(attr.getAttrId());
+
+        //判断关系表中，这个属性id有没有分组id，有的话就改，没有的话就插入
+        Integer count = attrAttrgroupRelationDao.selectCount(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_id", attr.getAttrId()));
+        if (count > 0) {
+            attrAttrgroupRelationDao.update(attrAttrgroupRelationEntity,
+                    new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_id", attr.getAttrId()));
+        }else {
+            attrAttrgroupRelationDao.insert(attrAttrgroupRelationEntity);
+        }
+
+
     }
 
 }

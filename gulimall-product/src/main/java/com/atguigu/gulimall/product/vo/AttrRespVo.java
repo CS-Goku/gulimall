@@ -2,7 +2,9 @@ package com.atguigu.gulimall.product.vo;
 
 
 import lombok.Data;
-
+/*
+响应的
+ */
 @Data
 public class AttrRespVo extends AttrVo{
 
@@ -14,6 +16,8 @@ public class AttrRespVo extends AttrVo{
     private String catelogName;//所属分类名字
 
     private String groupName;//所属属性分组名字
+
+    private Long[] catelogPath;//所属分类完整路径
 
 
 }

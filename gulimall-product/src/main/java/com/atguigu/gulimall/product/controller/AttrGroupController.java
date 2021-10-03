@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.atguigu.gulimall.product.entity.AttrEntity;
+import com.atguigu.gulimall.product.service.AttrAttrgroupRelationService;
 import com.atguigu.gulimall.product.service.AttrService;
 import com.atguigu.gulimall.product.service.CategoryService;
 import com.atguigu.gulimall.product.vo.AttrGroupRelationVo;
@@ -36,6 +37,9 @@ public class AttrGroupController {
 
     @Autowired
     private AttrService attrService;
+
+    @Autowired
+    private AttrAttrgroupRelationService attrAttrgroupRelationService;
 
 
     // /product/attrgroup/{attrgroupId}/attr/relation 获取属性分组关联的所有属性
@@ -121,6 +125,13 @@ public class AttrGroupController {
         attrService.deleteRelation(vos);
         return R.ok();
 
+    }
+
+    // /product/attrgroup/attr/relation 添加属性与分组关联
+    @PostMapping("/attr/relation")
+    public R addRelation(@RequestBody List<AttrGroupRelationVo> vos){
+        attrAttrgroupRelationService.saveBatch(vos);
+        return R.ok();
     }
 
 }

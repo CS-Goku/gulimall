@@ -68,7 +68,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
         BeanUtils.copyProperties(attr, attrEntity);
         this.save(attrEntity);
 
-        if (attr.getAttrType() == ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode()) {
+        if (attr.getAttrType() == ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode() && attr.getAttrGroupId()!= null) {
             //需求2：保存属性、属性分组关联表数据,就要用到Vo实体
             AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = new AttrAttrgroupRelationEntity();
             //把数据拿出来再放到实体里，最后保存
@@ -123,7 +123,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             //销售属性是不在属性分组里的，所以要加判断
             if ("base".equalsIgnoreCase(attrType)) {
                 AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = attrAttrgroupRelationDao.selectOne(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_id", attrEntity.getAttrId()));
-                if (attrAttrgroupRelationEntity != null) {
+                if (attrAttrgroupRelationEntity != null && attrAttrgroupRelationEntity.getAttrGroupId()!=null) {
                     AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrAttrgroupRelationEntity.getAttrGroupId());
                     //搞到groupName
                     attrRespVo.setGroupName(attrGroupEntity.getAttrGroupName());
@@ -265,7 +265,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
         List<Long> collect = group.stream().map(item -> {
             return item.getAttrGroupId();
         }).collect(Collectors.toList());
-        //通过分组id集合获取到它关联的属性集合，这些集合都存在于关联表中，所以已经是被关联的属性，最终的目的就是从该分类下的所有属性中排除这些。
+        //通过分组id集合获取到它关联的属性集合，这些集合都存在于关联表中，所以已经是被关联的属性，最终的目的就是从该分类下的所有属性中排除这些。包括自己关联的哪些属性也得排除
         List<AttrAttrgroupRelationEntity> groupId = attrAttrgroupRelationDao.selectList(new QueryWrapper<AttrAttrgroupRelationEntity>().in("attr_group_id", collect));
         List<Long> attrIds = groupId.stream().map(item -> {
             return item.getAttrId();

@@ -1,7 +1,14 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.atguigu.gulimall.product.vo.AttrGroupRelationVo;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -25,5 +32,24 @@ public class AttrAttrgroupRelationServiceImpl extends ServiceImpl<AttrAttrgroupR
 
         return new PageUtils(page);
     }
+
+    /**
+     *
+     * 新增属性和分组的关联关系
+     * @param vos
+     */
+    @Override
+    public void saveBatch(List<AttrGroupRelationVo> vos) {//这个参数集合，有属性id和分组id两个元素，但是可能会有很多组
+        //先把集合中的每一批映射到完整的原实体中去,再把这些个实体封装成集合
+        List<AttrAttrgroupRelationEntity> collect = vos.stream().map(item -> {
+            AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = new AttrAttrgroupRelationEntity();
+            BeanUtils.copyProperties(item, attrAttrgroupRelationEntity);
+            return attrAttrgroupRelationEntity;
+        }).collect(Collectors.toList());
+
+        //用本地方法批量保存
+        this.saveBatch(collect);
+    }
+
 
 }

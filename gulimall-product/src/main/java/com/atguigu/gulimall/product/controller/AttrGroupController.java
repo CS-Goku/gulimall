@@ -44,6 +44,14 @@ public class AttrGroupController {
         List<AttrEntity>  attrEntities = attrService.getRelationAttr(attrgroupId);
         return R.ok().put("data",attrEntities);
     }
+
+
+    // /product/attrgroup/{attrgroupId}/noattr/relation 获取属性分组还能关联哪些未关联的属性
+    @GetMapping("/{attrgroupId}/noattr/relation")
+    public R attrNoRelation(@RequestParam Map<String,Object> params,@PathVariable("attrgroupId") Long attrgroupId){
+        PageUtils page = attrService.getNoRelationAttr(params,attrgroupId);
+        return R.ok().put("page",page);
+    }
     /**
      * 列表
      */

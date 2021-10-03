@@ -227,6 +227,9 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             return attr.getAttrId();
         }).collect(Collectors.toList());
 
+        if(attrIds == null || attrIds.size() == 0){
+            return null;
+        }
         //用属性id集合去查所有属性实体集合
         Collection<AttrEntity> attrEntities = this.listByIds(attrIds);
         return (List<AttrEntity>) attrEntities;
@@ -241,6 +244,51 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             return attrAttrgroupRelationEntity;
         }).collect(Collectors.toList());
         attrAttrgroupRelationDao.deleteBatchRelation(entities);
+    }
+
+    /**
+     *
+     * 获取属性分组还能关联哪些未关联的属性
+     * @param params
+     * @param attrgroupId
+     * @return
+     */
+    @Override
+    //属性和分组都对应唯一分类，所以当前分组只能和当前分类中未被其他分组关联的属性
+    public PageUtils getNoRelationAttr(Map<String, Object> params, Long attrgroupId) {
+        //获取当前分类
+        AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrgroupId);
+        Long catelogId = attrGroupEntity.getCatelogId();
+        //获取当前分类的分组实体集合
+        List<AttrGroupEntity> group = attrGroupDao.selectList(new QueryWrapper<AttrGroupEntity>().eq("catelog_id", catelogId));
+        //获取他们的分组id
+        List<Long> collect = group.stream().map(item -> {
+            return item.getAttrGroupId();
+        }).collect(Collectors.toList());
+        //通过分组id集合获取到它关联的属性集合，这些集合都存在于关联表中，所以已经是被关联的属性，最终的目的就是从该分类下的所有属性中排除这些。
+        List<AttrAttrgroupRelationEntity> groupId = attrAttrgroupRelationDao.selectList(new QueryWrapper<AttrAttrgroupRelationEntity>().in("attr_group_id", collect));
+        List<Long> attrIds = groupId.stream().map(item -> {
+            return item.getAttrId();
+        }).collect(Collectors.toList());
+        //当前分类中排除这些属性之外的剩下的属性 就是最终要的当前分组所属分类下的为被同分类其他分组关联的属性 也就是可被关联的属性
+        QueryWrapper<AttrEntity> wrapper = new QueryWrapper<AttrEntity>().eq("catelog_id", catelogId).eq("attr_type",ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode());
+        if(attrIds!=null && attrIds.size()>0){
+            wrapper.notIn("attr_id", attrIds);
+        }
+
+        //在搞分页
+        //模糊查询
+        String key = (String) params.get("key");
+        if (!StringUtils.isEmpty(key)){
+            wrapper.and((w)->{
+                w.eq("attr_id",key).or().eq("attr_name",key);
+            });
+        }
+        IPage<AttrEntity> page = this.page(new Query<AttrEntity>().getPage(params), wrapper);
+        PageUtils pageUtils = new PageUtils(page);
+        return pageUtils;
+
+        //总结一下：就是查询带分页的数据，首先要查询全部，然后再搞模糊查询，分页封装进去，默认查询全部的数据需要加条件的加条件
     }
 
 

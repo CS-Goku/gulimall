@@ -34,7 +34,7 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     private CategoryService categoryService;
 
     @Autowired
-    private CategoryBrandRelationDao categoryBrandRelationDao;
+    private CategoryBrandRelationDao relationDao;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -76,7 +76,7 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
         categoryBrandRelationEntity.setBrandName(name);
         //然后操作数据库保存,这个方法要求有实体和更新的操作
         //sql：UPDATE pms_category_brand_relation set brand_name = ? WHERE brand_id = ?;
-        this.update(categoryBrandRelationEntity,new UpdateWrapper<CategoryBrandRelationEntity>().eq("brand_id",brandId));
+        this.update(categoryBrandRelationEntity, new UpdateWrapper<CategoryBrandRelationEntity>().eq("brand_id", brandId));
 
     }
 
@@ -84,7 +84,7 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     @Override
     public void updateCategory(Long catId, String name) {
 
-        this.baseMapper.updateCategory(catId,name);
+        this.baseMapper.updateCategory(catId, name);
     }
 
     /**
@@ -97,7 +97,7 @@ public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandR
     public List<BrandEntity> getBrandsByCatId(Long catId) {
         //使用本类的dao来查询，也可以用this.baseMapper
         //获取到存有对应分类id，品牌id的关系表实体集合
-        List<CategoryBrandRelationEntity> catelog_id = categoryBrandRelationDao.selectList(new QueryWrapper<CategoryBrandRelationEntity>().eq("catelog_id", catId));
+        List<CategoryBrandRelationEntity> catelog_id = relationDao.selectList(new QueryWrapper<CategoryBrandRelationEntity>().eq("catelog_id", catId));
 
         //把实体集合的元素映射出来，用这些数据查询完整的品牌实体，再收集成集合
         List<BrandEntity> collect = catelog_id.stream().map(item -> {

@@ -1,6 +1,7 @@
 package com.atguigu.gulimall.product.controller;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import com.atguigu.gulimall.product.vo.SpuSaveVo;
@@ -55,12 +56,13 @@ public class SpuInfoController {
     }
 
     /**
-     * 保存
+     * 商品新增业务
      */
     @RequestMapping("/save")
     //@RequiresPermissions("product:spuinfo:save")
-    public R save(@RequestBody SpuSaveVo Vo){
+    public R save(@RequestBody SpuSaveVo vo){
 //		spuInfoService.save(spuInfo);
+        spuInfoService.saveSpuInfo(vo);
 
         return R.ok();
     }

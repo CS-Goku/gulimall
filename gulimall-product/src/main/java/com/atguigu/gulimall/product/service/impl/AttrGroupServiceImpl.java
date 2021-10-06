@@ -28,7 +28,7 @@ import org.springframework.util.StringUtils;
 public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupDao, AttrGroupEntity> implements AttrGroupService {
 
     @Autowired
-    private AttrService attrService;
+    AttrService attrService;
 
 
     @Override

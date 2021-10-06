@@ -36,17 +36,17 @@ import org.springframework.util.StringUtils;
 public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements AttrService {
 
     @Autowired
-//    private AttrAttrgroupRelationService attrAttrgroupRelationService;
+//    AttrAttrgroupRelationService attrAttrgroupRelationService;
     private AttrAttrgroupRelationDao attrAttrgroupRelationDao;
 
     @Autowired
-    private CategoryDao categoryDao;
+    CategoryDao categoryDao;
 
     @Autowired
-    private AttrGroupDao attrGroupDao;
+    AttrGroupDao attrGroupDao;
 
     @Autowired
-    private CategoryService categoryService;
+    CategoryService categoryService;
 
 
     @Override
@@ -68,7 +68,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
         BeanUtils.copyProperties(attr, attrEntity);
         this.save(attrEntity);
 
-        if (attr.getAttrType() == ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode() && attr.getAttrGroupId()!= null) {
+        if (attr.getAttrType() == ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode() && attr.getAttrGroupId() != null) {
             //需求2：保存属性、属性分组关联表数据,就要用到Vo实体
             AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = new AttrAttrgroupRelationEntity();
             //把数据拿出来再放到实体里，最后保存
@@ -123,7 +123,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             //销售属性是不在属性分组里的，所以要加判断
             if ("base".equalsIgnoreCase(attrType)) {
                 AttrAttrgroupRelationEntity attrAttrgroupRelationEntity = attrAttrgroupRelationDao.selectOne(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_id", attrEntity.getAttrId()));
-                if (attrAttrgroupRelationEntity != null && attrAttrgroupRelationEntity.getAttrGroupId()!=null) {
+                if (attrAttrgroupRelationEntity != null && attrAttrgroupRelationEntity.getAttrGroupId() != null) {
                     AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrAttrgroupRelationEntity.getAttrGroupId());
                     //搞到groupName
                     attrRespVo.setGroupName(attrGroupEntity.getAttrGroupName());
@@ -227,7 +227,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             return attr.getAttrId();
         }).collect(Collectors.toList());
 
-        if(attrIds == null || attrIds.size() == 0){
+        if (attrIds == null || attrIds.size() == 0) {
             return null;
         }
         //用属性id集合去查所有属性实体集合
@@ -247,8 +247,8 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
     }
 
     /**
-     *
      * 获取属性分组还能关联哪些未关联的属性
+     *
      * @param params
      * @param attrgroupId
      * @return
@@ -271,17 +271,17 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             return item.getAttrId();
         }).collect(Collectors.toList());
         //当前分类中排除这些属性之外的剩下的属性 就是最终要的当前分组所属分类下的为被同分类其他分组关联的属性 也就是可被关联的属性
-        QueryWrapper<AttrEntity> wrapper = new QueryWrapper<AttrEntity>().eq("catelog_id", catelogId).eq("attr_type",ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode());
-        if(attrIds!=null && attrIds.size()>0){
+        QueryWrapper<AttrEntity> wrapper = new QueryWrapper<AttrEntity>().eq("catelog_id", catelogId).eq("attr_type", ProductConstant.AttrEnum.ATTR_TYPE_BASE.getCode());
+        if (attrIds != null && attrIds.size() > 0) {
             wrapper.notIn("attr_id", attrIds);
         }
 
         //在搞分页
         //模糊查询
         String key = (String) params.get("key");
-        if (!StringUtils.isEmpty(key)){
-            wrapper.and((w)->{
-                w.eq("attr_id",key).or().eq("attr_name",key);
+        if (!StringUtils.isEmpty(key)) {
+            wrapper.and((w) -> {
+                w.eq("attr_id", key).or().eq("attr_name", key);
             });
         }
         IPage<AttrEntity> page = this.page(new Query<AttrEntity>().getPage(params), wrapper);

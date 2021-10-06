@@ -32,25 +32,25 @@ import org.springframework.util.StringUtils;
 public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> implements SpuInfoService {
 
     @Autowired
-    private SpuInfoDescService spuInfoDescService;
+    SpuInfoDescService spuInfoDescService;
 
     @Autowired
-    private SpuImagesService spuImagesService;
+    SpuImagesService spuImagesService;
 
     @Autowired
-    private ProductAttrValueService attrValueService;
+    ProductAttrValueService attrValueService;
 
     @Autowired
-    private SkuInfoService skuInfoService;
+    SkuInfoService skuInfoService;
 
     @Autowired
-    private SkuImagesService skuImagesService;
+    SkuImagesService skuImagesService;
 
     @Autowired
-    private SkuSaleAttrValueService skuSaleAttrValueService;
+    SkuSaleAttrValueService skuSaleAttrValueService;
 
     @Autowired
-    private CouponFeignService couponFeignService;
+    CouponFeignService couponFeignService;
 
     @Autowired
     AttrService attrService;
@@ -67,6 +67,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     /**
      * //todo 高级部分完善
+     *
      * @param vo
      */
     @Transactional

@@ -28,13 +28,13 @@ import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 public class CategoryBrandRelationServiceImpl extends ServiceImpl<CategoryBrandRelationDao, CategoryBrandRelationEntity> implements CategoryBrandRelationService {
 
     @Autowired
-    private BrandService brandService;
+    BrandService brandService;
 
     @Autowired
-    private CategoryService categoryService;
+    CategoryService categoryService;
 
     @Autowired
-    private CategoryBrandRelationDao relationDao;
+    CategoryBrandRelationDao relationDao;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {

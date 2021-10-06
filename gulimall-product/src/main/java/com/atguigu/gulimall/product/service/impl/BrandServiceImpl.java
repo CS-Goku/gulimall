@@ -22,7 +22,7 @@ import org.springframework.util.StringUtils;
 public class BrandServiceImpl extends ServiceImpl<BrandDao, BrandEntity> implements BrandService {
 
     @Autowired
-    private CategoryBrandRelationService categoryBrandRelationService;
+    CategoryBrandRelationService categoryBrandRelationService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {

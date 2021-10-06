@@ -31,12 +31,13 @@ public class SkuInfoController {
     private SkuInfoService skuInfoService;
 
     /**
+     * sku检索 ：
      * 列表
      */
     @RequestMapping("/list")
     //@RequiresPermissions("product:skuinfo:list")
     public R list(@RequestParam Map<String, Object> params){
-        PageUtils page = skuInfoService.queryPage(params);
+        PageUtils page = skuInfoService.queryPageByCondition(params);
 
         return R.ok().put("page", page);
     }

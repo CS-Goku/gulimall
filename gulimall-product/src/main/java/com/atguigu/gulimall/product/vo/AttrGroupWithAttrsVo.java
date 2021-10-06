@@ -12,7 +12,6 @@ public class AttrGroupWithAttrsVo {
     /**
      * 分组id
      */
-    @TableId
     private Long attrGroupId;
     /**
      * 组名
@@ -35,8 +34,5 @@ public class AttrGroupWithAttrsVo {
      */
     private Long catelogId;
 
-    /**
-     * 当前分组的所有属性
-     */
-    private List<AttrEntity> attrEntities;
+    private List<AttrEntity> attrs;
 }

@@ -47,7 +47,6 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupDao, AttrGroupEnt
         QueryWrapper<AttrGroupEntity> wrapper = new QueryWrapper<>();
 
 
-
         if (catelogId != 0) {
             wrapper.eq("catelog_id", catelogId);
             IPage<AttrGroupEntity> page = this.page(new Query<AttrGroupEntity>().getPage(params), wrapper);
@@ -72,6 +71,7 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupDao, AttrGroupEnt
 
     /**
      * 查询当前分类下的所有属性分组以及属性
+     *
      * @param catelogId
      * @return
      */
@@ -81,18 +81,16 @@ public class AttrGroupServiceImpl extends ServiceImpl<AttrGroupDao, AttrGroupEnt
         List<AttrGroupEntity> attrGroupEntities = this.baseMapper.selectList(new QueryWrapper<AttrGroupEntity>().eq("catelog_id", catelogId));
 
         //把所有属性分组映射到vo里，并且获取到所有属性，也映射到vo里
-        List<AttrGroupWithAttrsVo> vos = attrGroupEntities.stream().map(group -> {
-            AttrGroupWithAttrsVo attrGroupWithAttrsVo = new AttrGroupWithAttrsVo();
-            BeanUtils.copyProperties(group, attrGroupWithAttrsVo);
+        List<AttrGroupWithAttrsVo> collect = attrGroupEntities.stream().map(group -> {
+            AttrGroupWithAttrsVo attrsVo = new AttrGroupWithAttrsVo();
+            BeanUtils.copyProperties(group, attrsVo);
             //获取所有属性,复用方法
-            Long attrGroupId = group.getAttrGroupId();
-
-            List<AttrEntity> attrEntities = attrService.getRelationAttr(attrGroupId);
-            attrGroupWithAttrsVo.setAttrEntities(attrEntities);
-            return attrGroupWithAttrsVo;
+            List<AttrEntity> attrs = attrService.getRelationAttr(attrsVo.getAttrGroupId());
+            attrsVo.setAttrs(attrs);
+            return attrsVo;
         }).collect(Collectors.toList());
 
-        return vos;
+        return collect;
     }
 
 

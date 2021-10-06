@@ -23,8 +23,7 @@ import com.atguigu.gulimall.product.service.ProductAttrValueService;
 
 @Service("productAttrValueService")
 public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueDao, ProductAttrValueEntity> implements ProductAttrValueService {
-    @Autowired
-    private AttrService attrService;
+
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -37,24 +36,9 @@ public class ProductAttrValueServiceImpl extends ServiceImpl<ProductAttrValueDao
     }
 
     @Override
-    public void saveProductAttrValue(Long id, List<BaseAttrs> baseAttrs) {
-        if (baseAttrs == null || baseAttrs.size() == 0){
-
-        }else {
-            List<ProductAttrValueEntity> collect = baseAttrs.stream().map(item -> {
-                ProductAttrValueEntity productAttrValueEntity = new ProductAttrValueEntity();
-                productAttrValueEntity.setSpuId(id);
-                productAttrValueEntity.setAttrId(item.getAttrId());
-                //需要另外查询属性名字，根据属性id
-                AttrEntity byId = attrService.getById(item.getAttrId());
-                productAttrValueEntity.setAttrName(byId.getAttrName());
-                productAttrValueEntity.setAttrValue(item.getAttrValues());
-                productAttrValueEntity.setQuickShow(item.getShowDesc());
-
-                return productAttrValueEntity;
-            }).collect(Collectors.toList());
-            this.saveBatch(collect);
-        }
+    public void saveProductAttr(List<ProductAttrValueEntity> collect) {
+        this.saveBatch(collect);
     }
+
 
 }

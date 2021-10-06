@@ -10,6 +10,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public class SkuFullReductionServiceImpl extends ServiceImpl<SkuFullReductionDao
 
     @Autowired
     MemberPriceService memberPriceService;
+
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
         IPage<SkuFullReductionEntity> page = this.page(
@@ -51,13 +53,18 @@ public class SkuFullReductionServiceImpl extends ServiceImpl<SkuFullReductionDao
         //6、4保存sku的优惠、满减信息：gulimall_sms->sms_sku_ladder\sms_sku_full_reduction\sms_member_price
         //sms_sku_ladder
         SkuLadderEntity skuLadderEntity = new SkuLadderEntity();
-        BeanUtils.copyProperties(skuReductionTo,skuLadderEntity);
-        skuLadderService.save(skuLadderEntity);
+        BeanUtils.copyProperties(skuReductionTo, skuLadderEntity);
+        if (skuReductionTo.getFullCount() > 0) {
+            skuLadderService.save(skuLadderEntity);
+        }
+
 
         //sms_sku_full_reduction
         SkuFullReductionEntity skuFullReductionEntity = new SkuFullReductionEntity();
-        BeanUtils.copyProperties(skuReductionTo,skuFullReductionEntity);
-        skuFullReductionService.save(skuFullReductionEntity);
+        BeanUtils.copyProperties(skuReductionTo, skuFullReductionEntity);
+        if (skuReductionTo.getFullPrice().compareTo(new BigDecimal("0")) == 1){
+            skuFullReductionService.save(skuFullReductionEntity);
+        }
 
         //sms_member_price
         List<MemberPrice> memberPrice = skuReductionTo.getMemberPrice();
@@ -67,6 +74,8 @@ public class SkuFullReductionServiceImpl extends ServiceImpl<SkuFullReductionDao
             memberPriceEntity.setSkuId(skuReductionTo.getSkuId());
             memberPriceEntity.setAddOther(1);
             return memberPriceEntity;
+        }).filter(item->{
+            return item.getMemberPrice().compareTo(new BigDecimal("0"))==1;
         }).collect(Collectors.toList());
         memberPriceService.saveBatch(collect);
     }

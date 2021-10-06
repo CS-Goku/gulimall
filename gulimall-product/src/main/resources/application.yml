@@ -5,9 +5,6 @@ spring:
     url: jdbc:mysql://112.124.27.121:3306/gulimall_pms?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai
     driver-class-name: com.mysql.cj.jdbc.Driver
   cloud:
-    ribbon:
-      ReadTimeout: 5000   #负载均衡超时时间，默认值5000
-      ConnectTimeout: 5000 #ribbon请求连接的超时时间，默认值2000
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848
@@ -16,6 +13,8 @@ spring:
       secret-key: GCLiaTIviz2oUH35Eu4bTOQc8P9lDC
       oss:
         endpoint: oss-cn-hangzhou.aliyuncs.com
+  jackson:
+    joda-date-time-format: yyyy-MM-dd HH:mm:ss
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   global-config:
@@ -28,4 +27,3 @@ server:
 logging:
   level:
     com.atguigu.gulimall: debug
-

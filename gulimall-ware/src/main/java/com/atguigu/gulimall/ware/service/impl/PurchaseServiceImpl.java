@@ -26,4 +26,19 @@ public class PurchaseServiceImpl extends ServiceImpl<PurchaseDao, PurchaseEntity
         return new PageUtils(page);
     }
 
+    /**
+     * 查询未领取的采购单
+     * @param params
+     * @return
+     */
+    @Override
+    public PageUtils queryPageUnreceivePurchase(Map<String, Object> params) {
+        IPage<PurchaseEntity> page = this.page(
+                new Query<PurchaseEntity>().getPage(params),
+                new QueryWrapper<PurchaseEntity>().eq("status",0).or().eq("status",1)
+        );
+
+        return new PageUtils(page);
+    }
+
 }

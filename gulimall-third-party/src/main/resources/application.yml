@@ -11,6 +11,7 @@ spring:
       oss:
         endpoint: oss-cn-hangzhou.aliyuncs.com
         bucket: gulimall-xixihaha
+#        todo 暴露出来不安全
 
 
 

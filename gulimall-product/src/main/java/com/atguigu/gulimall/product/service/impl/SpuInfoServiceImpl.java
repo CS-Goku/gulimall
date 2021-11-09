@@ -1,20 +1,22 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.atguigu.common.to.SkuHasStockVo;
 import com.atguigu.common.to.SkuReductionTo;
 import com.atguigu.common.to.SpuBoundTo;
+import com.atguigu.common.to.es.SkuEsMappingModel;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.entity.*;
 import com.atguigu.gulimall.product.feign.CouponFeignService;
+import com.atguigu.gulimall.product.feign.WareFeignService;
 import com.atguigu.gulimall.product.service.*;
 import com.atguigu.gulimall.product.vo.*;
+import lombok.Data;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -54,6 +56,18 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     AttrService attrService;
+
+    @Autowired
+    BrandService brandService;
+
+    @Autowired
+    CategoryService categoryService;
+
+    @Autowired
+    WareFeignService wareFeignService;
+
+
+
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -228,6 +242,91 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
         return new PageUtils(page);
 
+    }
+
+    @Override
+    public void up(Long spuId) {
+        //1.根据spuId查出所有的sku
+        List<SkuInfoEntity> skus = skuInfoService.getSkuBySpuId(spuId);
+
+
+        //todo 3.公共属性数据同一个spu的sku都一样，所以放到外面查一次,查出所有可被检索的attr集合
+//            private List<SkuEsMappingModel.Attr> attrs;
+//            @Data
+//            public static class Attr{
+//                private Long attrId;
+//                private String attrName;
+//                private String attrValue;
+//            }
+        //todo 问题：为什么不能用联表查询？为什么要List要转Set
+        //3.1根据spuId查对应的商品属性attrids集合
+        List<ProductAttrValueEntity> attrs = attrValueService.getAttrBySpuId(spuId);
+        List<Long> attrIds = attrs.stream().map(attr -> attr.getAttrId()).collect(Collectors.toList());
+        //3.2根据attrIds的中的id找出属性表中对应的id，以及这些id需要满足可被检索的条件,因为同一个表中两个条件，所以用sql写
+        //SELECT attr_id FROM pms_attr WHERE attr_id in (1,2) and search_type = 1;
+        List<Long> searchAttrIds = attrService.selectSearchAttrIdsByAttrIds(attrIds);
+        //3.3 根据满足条件的集合id过滤出第一个属性集合,在封装成List<SkuEsMappingModel.Attr> attrList，到第2步去设置
+        Set<Long> idsSet = new HashSet<>(searchAttrIds);
+        List<SkuEsMappingModel.Attr> attrList = attrs.stream().filter(attr -> {
+            //List<ProductAttrValueEntity>
+            return idsSet.contains(attr.getAttrId());
+        }).map(item -> {
+            //最终放到es实体的List<Attr> attrs中
+            SkuEsMappingModel.Attr attr = new SkuEsMappingModel.Attr();
+            BeanUtils.copyProperties(attr, item);
+            return attr;
+        }).collect(Collectors.toList());
+
+
+
+        //拿到所有skuIds给esModel.setHasStock(?);
+        Map<Long, Boolean> map = null;
+        try {
+            List<Long> skuIds = skus.stream().map(SkuInfoEntity::getSpuId).collect(Collectors.toList());
+            R<List<SkuHasStockVo>> hasStock = wareFeignService.getHasStock(skuIds);
+            List<SkuHasStockVo> data = hasStock.getData();
+            map = data.stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId, SkuHasStockVo::getHasStock));
+        }catch (Exception e){
+            log.error("库存服务查询异常：原因{}"+e);
+        }
+
+
+
+        //2.把skus弄到对应的es实体中，先拷贝，在额外添加其他的没有的数据
+        Map<Long, Boolean> finalMap = map;
+        List<SkuEsMappingModel> esModels = skus.stream().map(sku -> {
+            //先拷贝已有数据
+            SkuEsMappingModel esModel = new SkuEsMappingModel();
+            BeanUtils.copyProperties(sku, esModel);
+
+
+            //哪些是原实体中没有的数据
+            //skuPrice，skuImg
+            esModel.setSkuPrice(sku.getPrice());
+            esModel.setSkuImg(sku.getSkuDefaultImg());
+            //查询品牌名字、图片 和 分类名字brandName，brandImg，catalogName
+            BrandEntity brandEntity = brandService.getById(sku.getBrandId());
+            esModel.setBrandName(brandEntity.getName());
+            esModel.setBrandImg(brandEntity.getLogo());
+            CategoryEntity categoryEntity = categoryService.getById(sku.getCatalogId());
+            esModel.setCatalogName(categoryEntity.getName());
+            //热门评分，太复杂，直接默认0
+            esModel.setHotScore(0L);
+
+            //todo 1.远程调用库存服务查看库存状态private Boolean hasStock;
+            if (finalMap == null){
+                esModel.setHasStock(false);
+            }else {
+                esModel.setHasStock(finalMap.get(sku.getSkuId()));
+            }
+
+
+            //todo 2.放入属性
+            esModel.setAttrs(attrList);
+
+            return esModel;
+        }).collect(Collectors.toList());
+        //3.调用es服务上架
     }
 
 

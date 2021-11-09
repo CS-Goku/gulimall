@@ -291,5 +291,11 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
         //总结一下：就是查询带分页的数据，首先要查询全部，然后再搞模糊查询，分页封装进去，默认查询全部的数据需要加条件的加条件
     }
 
+    @Override
+    public List<Long> selectSearchAttrIdsByAttrIds(List<Long> attrIds) {
+        //因为有两个条件，所以用接口写
+        return this.baseMapper.selectSearchAttrIdsByAttrIds(attrIds);
+    }
+
 
 }

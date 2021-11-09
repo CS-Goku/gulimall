@@ -1,5 +1,6 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.atguigu.common.constant.ProductConstant;
 import com.atguigu.common.to.SkuHasStockVo;
 import com.atguigu.common.to.SkuReductionTo;
 import com.atguigu.common.to.SpuBoundTo;
@@ -7,6 +8,7 @@ import com.atguigu.common.to.es.SkuEsMappingModel;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.entity.*;
 import com.atguigu.gulimall.product.feign.CouponFeignService;
+import com.atguigu.gulimall.product.feign.SearchFeignService;
 import com.atguigu.gulimall.product.feign.WareFeignService;
 import com.atguigu.gulimall.product.service.*;
 import com.atguigu.gulimall.product.vo.*;
@@ -66,7 +68,8 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
     @Autowired
     WareFeignService wareFeignService;
 
-
+    @Autowired
+    SearchFeignService searchFeignService;
 
 
     @Override
@@ -287,7 +290,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             List<SkuHasStockVo> data = hasStock.getData();
             map = data.stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId, SkuHasStockVo::getHasStock));
         }catch (Exception e){
-            log.error("库存服务查询异常：原因{}"+e);
+            log.error("库存服务查询异常：原因{}",e);
         }
 
 
@@ -327,6 +330,14 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             return esModel;
         }).collect(Collectors.toList());
         //3.调用es服务上架
+        R r = searchFeignService.productStatusUp(esModels);
+        if (r.getCode() == 0){
+            //成功，修改spu上架状态
+            baseMapper.updateSpuStatus(spuId,ProductConstant.StatusEnum.SPU_UP.getCode());
+        }else {
+            //失败
+            //todo 重复调用，接口幂等性问题；重试机制
+        }
     }
 
 

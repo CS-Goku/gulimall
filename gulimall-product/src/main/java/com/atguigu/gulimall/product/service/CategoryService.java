@@ -34,6 +34,8 @@ public interface CategoryService extends IService<CategoryEntity> {
 
     void updateCascade(CategoryEntity category);
 
+    List<CategoryEntity> selectLevel1();
+
 //    void updateCascade(CategoryEntity category);
 }
 

@@ -292,7 +292,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
     }
 
     @Override
-    public List<Long> selectSearchAttrIdsByAttrIds(List<Long> attrIds) {
+    public List<Long> selectSearchAttrIds(List<Long> attrIds) {
         //因为有两个条件，所以用接口写
         return this.baseMapper.selectSearchAttrIdsByAttrIds(attrIds);
     }

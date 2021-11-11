@@ -6,11 +6,7 @@ import java.util.Map;
 
 import com.atguigu.gulimall.ware.vo.SkuHasStockVo;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.atguigu.gulimall.ware.entity.WareSkuEntity;
 import com.atguigu.gulimall.ware.service.WareSkuService;
@@ -33,12 +29,12 @@ public class WareSkuController {
     private WareSkuService wareSkuService;
 
     //被远程调用查询sku库存状态
-    @RequestMapping("/hasStock")
-    public R<List<SkuHasStockVo>> getHasStock(@RequestBody List<Long> skuIds){
+    @PostMapping("/hasStock")
+    public R getSkuHasStock(@RequestBody List<Long> skuIds){
         List<SkuHasStockVo> skuHasStockVos =wareSkuService.getHasStockBySkuIds(skuIds);
-        R ok = R.ok();
-        ok.setData(skuHasStockVos);
-        return ok;
+
+
+        return R.ok().setData(skuHasStockVos);
     }
 
     /**

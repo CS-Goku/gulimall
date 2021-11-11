@@ -1,10 +1,11 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.common.constant.ProductConstant;
 import com.atguigu.common.to.SkuHasStockVo;
 import com.atguigu.common.to.SkuReductionTo;
 import com.atguigu.common.to.SpuBoundTo;
-import com.atguigu.common.to.es.SkuEsMappingModel;
+import com.atguigu.common.to.es.SkuEsModel;
 import com.atguigu.common.utils.R;
 import com.atguigu.gulimall.product.entity.*;
 import com.atguigu.gulimall.product.feign.CouponFeignService;
@@ -12,7 +13,6 @@ import com.atguigu.gulimall.product.feign.SearchFeignService;
 import com.atguigu.gulimall.product.feign.WareFeignService;
 import com.atguigu.gulimall.product.service.*;
 import com.atguigu.gulimall.product.vo.*;
-import lombok.Data;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -249,94 +249,82 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Override
     public void up(Long spuId) {
-        //1.根据spuId查出所有的sku
-        List<SkuInfoEntity> skus = skuInfoService.getSkuBySpuId(spuId);
+        // 1 组装数据 查出当前spuId对应的所有sku信息
+        List<SkuInfoEntity> skus = skuInfoService.getSkusBySpuId(spuId);
+        // 查询这些sku是否有库存
+        List<Long> skuids = skus.stream().map(sku -> sku.getSkuId()).collect(Collectors.toList());
+        // 2 封装每个sku的信息
 
-
-        //todo 3.公共属性数据同一个spu的sku都一样，所以放到外面查一次,查出所有可被检索的attr集合
-//            private List<SkuEsMappingModel.Attr> attrs;
-//            @Data
-//            public static class Attr{
-//                private Long attrId;
-//                private String attrName;
-//                private String attrValue;
-//            }
-        //todo 问题：为什么不能用联表查询？为什么要List要转Set
-        //3.1根据spuId查对应的商品属性attrids集合
-        List<ProductAttrValueEntity> attrs = attrValueService.getAttrBySpuId(spuId);
-        List<Long> attrIds = attrs.stream().map(attr -> attr.getAttrId()).collect(Collectors.toList());
-        //3.2根据attrIds的中的id找出属性表中对应的id，以及这些id需要满足可被检索的条件,因为同一个表中两个条件，所以用sql写
-        //SELECT attr_id FROM pms_attr WHERE attr_id in (1,2) and search_type = 1;
-        List<Long> searchAttrIds = attrService.selectSearchAttrIdsByAttrIds(attrIds);
-        //3.3 根据满足条件的集合id过滤出第一个属性集合,在封装成List<SkuEsMappingModel.Attr> attrList，到第2步去设置
-        Set<Long> idsSet = new HashSet<>(searchAttrIds);
-        List<SkuEsMappingModel.Attr> attrList = attrs.stream().filter(attr -> {
-            //List<ProductAttrValueEntity>
-            return idsSet.contains(attr.getAttrId());
-        }).map(item -> {
-            //最终放到es实体的List<Attr> attrs中
-            SkuEsMappingModel.Attr attr = new SkuEsMappingModel.Attr();
-            BeanUtils.copyProperties(attr, item);
-            return attr;
-        }).collect(Collectors.toList());
-
-
-
-        //拿到所有skuIds给esModel.setHasStock(?);
-        Map<Long, Boolean> map = null;
+        // 3.查询当前sku所有可以被用来检索的规格属性
+        List<ProductAttrValueEntity> baseAttrs = attrValueService.baseAttrListForSpu(spuId);
+        // 得到基本属性id
+        List<Long> attrIds = baseAttrs.stream().map(attr -> attr.getAttrId()).collect(Collectors.toList());
+        // 过滤出可被检索的基本属性id，即search_type = 1 [数据库中目前 4、5、6、11不可检索]
+        Set<Long> ids = new HashSet<>(attrService.selectSearchAttrIds(attrIds));
+        // 可被检索的属性封装到SkuEsModel.Attrs中
+        List<SkuEsModel.Attrs> attrs = baseAttrs.stream()
+                .filter(item -> ids.contains(item.getAttrId()))
+                .map(item -> {
+                    SkuEsModel.Attrs attr = new SkuEsModel.Attrs();
+                    BeanUtils.copyProperties(item, attr);
+                    return attr;
+                }).collect(Collectors.toList());
+        // 每件skuId是否有库存
+        Map<Long, Boolean> stockMap = null;
         try {
-            List<Long> skuIds = skus.stream().map(SkuInfoEntity::getSpuId).collect(Collectors.toList());
-            R<List<SkuHasStockVo>> hasStock = wareFeignService.getHasStock(skuIds);
-            List<SkuHasStockVo> data = hasStock.getData();
-            map = data.stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId, SkuHasStockVo::getHasStock));
-        }catch (Exception e){
-            log.error("库存服务查询异常：原因{}",e);
+            // 3.1 远程调用库存系统 查询该sku是否有库存
+            R hasStock = wareFeignService.getSkuHasStock(skuids);
+            // 构造器受保护 所以写成内部类对象
+            stockMap = hasStock.getData(new TypeReference<List<SkuHasStockVo>>() {
+            })
+                    .stream()
+                    .collect(Collectors.toMap(SkuHasStockVo::getSkuId, item -> item.getHasStock()));
+            log.warn("服务调用成功" + hasStock);
+        } catch (Exception e) {
+            log.error("库存服务调用失败: 原因{}", e);
         }
 
-
-
-        //2.把skus弄到对应的es实体中，先拷贝，在额外添加其他的没有的数据
-        Map<Long, Boolean> finalMap = map;
-        List<SkuEsMappingModel> esModels = skus.stream().map(sku -> {
-            //先拷贝已有数据
-            SkuEsMappingModel esModel = new SkuEsMappingModel();
+        Map<Long, Boolean> finalStockMap = stockMap;//防止lambda中改变
+        // 开始封装es
+        List<SkuEsModel> skuEsModels = skus.stream().map(sku -> {
+            SkuEsModel esModel = new SkuEsModel();
             BeanUtils.copyProperties(sku, esModel);
-
-
-            //哪些是原实体中没有的数据
-            //skuPrice，skuImg
             esModel.setSkuPrice(sku.getPrice());
             esModel.setSkuImg(sku.getSkuDefaultImg());
-            //查询品牌名字、图片 和 分类名字brandName，brandImg，catalogName
-            BrandEntity brandEntity = brandService.getById(sku.getBrandId());
+            // 4 设置库存，只查是否有库存，不查有多少
+            if (finalStockMap == null) {
+                esModel.setHasStock(true);
+            } else {
+                esModel.setHasStock(finalStockMap.get(sku.getSkuId()));
+            }
+            // TODO 1.热度评分  刚上架是0
+            esModel.setHotScore(0L);
+            // 设置品牌信息
+            BrandEntity brandEntity = brandService.getById(esModel.getBrandId());
             esModel.setBrandName(brandEntity.getName());
             esModel.setBrandImg(brandEntity.getLogo());
-            CategoryEntity categoryEntity = categoryService.getById(sku.getCatalogId());
+
+            // 查询分类信息
+            CategoryEntity categoryEntity = categoryService.getById(esModel.getCatalogId());
             esModel.setCatalogName(categoryEntity.getName());
-            //热门评分，太复杂，直接默认0
-            esModel.setHotScore(0L);
 
-            //todo 1.远程调用库存服务查看库存状态private Boolean hasStock;
-            if (finalMap == null){
-                esModel.setHasStock(false);
-            }else {
-                esModel.setHasStock(finalMap.get(sku.getSkuId()));
-            }
-
-
-            //todo 2.放入属性
-            esModel.setAttrs(attrList);
-
+            // 保存商品的属性，  查询当前sku的所有可以被用来检索的规格属性，同一spu都一样，在外面查一遍即可
+            esModel.setAttrs(attrs);
             return esModel;
         }).collect(Collectors.toList());
-        //3.调用es服务上架
-        R r = searchFeignService.productStatusUp(esModels);
-        if (r.getCode() == 0){
-            //成功，修改spu上架状态
-            baseMapper.updateSpuStatus(spuId,ProductConstant.StatusEnum.SPU_UP.getCode());
-        }else {
-            //失败
-            //todo 重复调用，接口幂等性问题；重试机制
+
+        // 5.发给ES进行保存  gulimall-search
+        R r = searchFeignService.productStatusUp(skuEsModels);
+        if (r.getCode() == 0) {
+            // 远程调用成功
+            baseMapper.updateSpuStatus(spuId, ProductConstant.StatusEnum.SPU_UP.getCode());
+        } else {
+            // 远程调用失败 TODO 接口幂等性 重试机制
+            /**
+             * Feign 的调用流程  Feign有自动重试机制
+             * 1. 发送请求执行
+             * 2.
+             */
         }
     }
 

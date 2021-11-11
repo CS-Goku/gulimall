@@ -39,7 +39,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-public class SkuEsMappingModel {
+public class SkuEsModel {
     private Long skuId;
     private Long spuId;
     private String skuTitle;
@@ -54,10 +54,10 @@ public class SkuEsMappingModel {
     private String brandName;
     private String brandImg;
     private String catalogName;
-    private List<Attr> attrs;
+    private List<Attrs> attrs;
 
     @Data
-    public static class Attr{
+    public static class Attrs{
         private Long attrId;
         private String attrName;
         private String attrValue;

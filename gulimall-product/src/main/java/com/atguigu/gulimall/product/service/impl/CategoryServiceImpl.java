@@ -121,12 +121,16 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public Map<String, List<Catelog2Vo>> selectLevel2() {
+        //1.方法优化，把嵌套查询，变成一次查询
+        List<CategoryEntity> entities = baseMapper.selectList(null);
+
+
         //1、查出所有1级分类
-        List<CategoryEntity> levels1 = selectLevel1();
+        List<CategoryEntity> levels1 = getParent_cid(entities,0l);
         //2、封装数据
         Map<String, List<Catelog2Vo>> parent_cid = levels1.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
             //1.查询所有2级分类
-            List<CategoryEntity> levels2 = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
+            List<CategoryEntity> levels2 = getParent_cid(entities,v.getCatId());
             //2.设置Vo
             //    private String catalog1Id;
             //    private List<Object> catalog3List;
@@ -138,7 +142,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
                     Catelog2Vo catelog2Vo = new Catelog2Vo(v.getCatId().toString(),null, l2.getCatId().toString(), l2.getName());
 
                     //1、找当前2级分类的3级分类数组
-                    List<CategoryEntity> levels3 = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", l2.getCatId()));
+                    List<CategoryEntity> levels3 = getParent_cid(entities,l2.getCatId());
                     //2、设置三级分类Vo
                     //        private String catalog2Id;
                     //        private String id;
@@ -163,6 +167,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }));
 
         return parent_cid;
+    }
+
+    private List<CategoryEntity> getParent_cid(List<CategoryEntity> entities,Long parent_cid) {
+        List<CategoryEntity> collect = entities.stream().filter(item -> item.getParentCid() == parent_cid).collect(Collectors.toList());
+//        return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
+        return collect;
     }
 
 

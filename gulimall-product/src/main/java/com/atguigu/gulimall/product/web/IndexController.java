@@ -36,4 +36,10 @@ public class IndexController {
 
         return level2s;
     }
+
+    @ResponseBody
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello";
+    }
 }

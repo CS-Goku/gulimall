@@ -5,10 +5,7 @@ import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -28,6 +25,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
 //    @Autowired
 //    CategoryDao categoryDao;
+    private Map<String,Object> cache = new HashMap<>();
 
     @Autowired
     CategoryBrandRelationService categoryBrandRelationService;
@@ -121,6 +119,17 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public Map<String, List<Catelog2Vo>> selectLevel2() {
+
+        //在缓存中查询
+//        Map<String, List<Catelog2Vo>> level2 = (Map<String, List<Catelog2Vo>>) cache.get("level2");
+//        if (cache.get("level2") == null){//缓存中没有。就查询一次数据库
+
+//        cache.put("level2",parent_cid);//更新到缓存中
+
+//        }
+//        return level2;
+
+
         //1.方法优化，把嵌套查询，变成一次查询
         List<CategoryEntity> entities = baseMapper.selectList(null);
 
@@ -167,6 +176,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }));
 
         return parent_cid;
+
+
     }
 
     private List<CategoryEntity> getParent_cid(List<CategoryEntity> entities,Long parent_cid) {

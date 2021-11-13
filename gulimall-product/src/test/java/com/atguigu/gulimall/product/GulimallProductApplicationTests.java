@@ -10,15 +10,14 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 
 /**
@@ -30,6 +29,9 @@ import java.util.List;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class GulimallProductApplicationTests {
+
+    @Autowired
+    StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     BrandService brandService;
@@ -63,9 +65,23 @@ public class GulimallProductApplicationTests {
     CategoryService categoryService;
 
     @Test
-    public void testFindPath(){
+    public void testRedis() {
+        ValueOperations<String, String> ops = stringRedisTemplate.opsForValue();
+
+        //保存
+        ops.set("hello", "world_" + UUID.randomUUID().toString());
+
+        //查询
+        String hello = ops.get("hello");
+
+        System.out.println("之前保存的是"+hello);
+    }
+
+
+    @Test
+    public void testFindPath() {
         Long[] catelogPath = categoryService.findCatelogPath(225L);
-        log.info("完整路径：{}",Arrays.asList(catelogPath));
+        log.info("完整路径：{}", Arrays.asList(catelogPath));
     }
 
     @Test

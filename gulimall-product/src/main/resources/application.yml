@@ -14,6 +14,9 @@ spring:
     cache: true
   mvc:
     static-path-pattern: /static/**
+  redis:
+    host: 121.196.205.27
+    port: 6379
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   global-config:

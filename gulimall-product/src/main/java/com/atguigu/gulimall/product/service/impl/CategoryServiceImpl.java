@@ -1,8 +1,11 @@
 package com.atguigu.gulimall.product.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -18,6 +21,7 @@ import com.atguigu.gulimall.product.dao.CategoryDao;
 import com.atguigu.gulimall.product.entity.CategoryEntity;
 import com.atguigu.gulimall.product.service.CategoryService;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 
 @Service("categoryService")
@@ -25,7 +29,11 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
 //    @Autowired
 //    CategoryDao categoryDao;
-    private Map<String,Object> cache = new HashMap<>();
+
+//    private Map<String,Object> cache = new HashMap<>();
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     CategoryBrandRelationService categoryBrandRelationService;
@@ -118,7 +126,26 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
     @Override
-    public Map<String, List<Catelog2Vo>> selectLevel2() {
+    public Map<String, List<Catelog2Vo>> selectLevel2(){
+        //直接从redis缓存中拿
+        String catalogJSON = stringRedisTemplate.opsForValue().get("catalogJSON");
+        if (StringUtils.isEmpty(catalogJSON)){
+            //缓存中没有就从数据库拿
+            Map<String, List<Catelog2Vo>> stringListMap = selectLevel2ForDb();
+            //拿完放到redis中,value需要string字符串，统一把数据变为json字符串，因为json跨语言跨平台
+            String s = JSON.toJSONString(stringListMap);
+            stringRedisTemplate.opsForValue().set("catalogJSON",s);
+
+            //返回需要到数据
+            return stringListMap;
+        }
+        //继续第一行，因为redis有数据，是个json字符串，所以要转为我们需要的对象
+        Map<String, List<Catelog2Vo>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {});
+
+        return stringListMap;
+    }
+
+    public Map<String, List<Catelog2Vo>> selectLevel2ForDb() {
 
         //在缓存中查询
 //        Map<String, List<Catelog2Vo>> level2 = (Map<String, List<Catelog2Vo>>) cache.get("level2");

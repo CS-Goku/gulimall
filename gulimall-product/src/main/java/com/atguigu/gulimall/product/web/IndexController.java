@@ -5,6 +5,7 @@ import com.atguigu.gulimall.product.service.CategoryService;
 import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
+import org.redisson.api.RSemaphore;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -72,7 +73,7 @@ public class IndexController {
     }
 
 
-    //保证一定能读到最新数据，修改期间写锁是一个排他锁（互斥锁），读锁是一个共享锁；写锁没释放，读就必须等待
+    //保证一定能读到最新数据，修改期间写锁是一个排他锁（互斥锁、独享锁），读锁是一个共享锁；写锁没释放，读就必须等待
     //读+写：等待读释放
     //写+写：阻塞，互斥
     //写+读：等待写释放
@@ -120,4 +121,29 @@ public class IndexController {
 
         return s;
     }
+
+    /**
+     * 模拟车库停车：2个车位
+     *
+     * 信号量也可以用作分布式限流
+     */
+    @GetMapping("/park")
+    @ResponseBody
+    public String park() throws InterruptedException {
+        //提前设置好信号量2
+        RSemaphore park = redissonClient.getSemaphore("park");
+        park.acquire();//停一辆，park减1
+
+        return "ok";
+    }
+
+    @GetMapping("/go")
+    @ResponseBody
+    public String go() {
+        RSemaphore park = redissonClient.getSemaphore("park");
+        park.release();//走一辆，park加1
+
+        return "ok";
+    }
+
 }

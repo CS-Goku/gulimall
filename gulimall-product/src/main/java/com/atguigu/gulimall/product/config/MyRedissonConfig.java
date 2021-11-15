@@ -7,11 +7,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class MyRedissionConfig {
+public class MyRedissonConfig {
 
 
 
-    // redission通过redissonClient对象使用 // 如果是多个redis集群，可以配置
+    // redisson通过redissonClient对象使用 // 如果是多个redis集群，可以配置
     @Bean(destroyMethod = "shutdown")
     public RedissonClient redisson() {
         Config config = new Config();

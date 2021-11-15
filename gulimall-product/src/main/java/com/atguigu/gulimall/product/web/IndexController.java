@@ -50,7 +50,7 @@ public class IndexController {
     }
 
 
-    //保证一定能读到最新数据，修改期间写锁是一个排他锁（互斥锁），读锁是一个共享锁；写锁没释放，读就必须等待
+
     @ResponseBody
     @GetMapping("/hello")
     public String hello() {
@@ -71,6 +71,13 @@ public class IndexController {
         return "hello";
     }
 
+
+    //保证一定能读到最新数据，修改期间写锁是一个排他锁（互斥锁），读锁是一个共享锁；写锁没释放，读就必须等待
+    //读+写：等待读释放
+    //写+写：阻塞，互斥
+    //写+读：等待写释放
+    //读+读：效果等于无锁，并发读
+    //总结：只要有写的存在，都要等待
     @ResponseBody
     @GetMapping("/read")
     public String readValue(){
@@ -80,7 +87,8 @@ public class IndexController {
         try {
             rLock.lock();
             s = redisTemplate.opsForValue().get("writeValue");
-            Thread.sleep(30000);
+            System.out.println("加读锁"+Thread.currentThread().getId());
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }finally {
@@ -101,8 +109,9 @@ public class IndexController {
         try {
             rLock.lock();
             s = UUID.randomUUID().toString();
-            Thread.sleep(30000);
             redisTemplate.opsForValue().set("writeValue",s);
+            System.out.println("加写锁"+Thread.currentThread().getId());
+            Thread.sleep(5000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }finally {

@@ -1,7 +1,7 @@
 package com.atguigu.gulimall.product;
 
+import com.atguigu.gulimall.product.config.MyRedissionConfig;
 import com.atguigu.gulimall.product.entity.BrandEntity;
-import com.atguigu.gulimall.product.entity.CategoryEntity;
 import com.atguigu.gulimall.product.service.BrandService;
 import com.atguigu.gulimall.product.service.CategoryService;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -14,9 +14,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.*;
 
 
@@ -63,6 +60,14 @@ public class GulimallProductApplicationTests {
     //测试回显分类完整路径
     @Autowired
     CategoryService categoryService;
+
+    @Autowired
+    MyRedissionConfig myRedissionConfig;
+
+    @Test
+    public void redission() {
+        System.out.println(myRedissionConfig);
+    }
 
     @Test
     public void testRedis() {

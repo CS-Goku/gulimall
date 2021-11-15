@@ -37,7 +37,7 @@ public interface CategoryService extends IService<CategoryEntity> {
 
     List<CategoryEntity> selectLevel1();
 
-    Map<String, List<Catelog2Vo>> selectLevel2();
+    Map<String, List<Catelog2Vo>> selectLevel2() throws InterruptedException;
 
 
 //    void updateCascade(CategoryEntity category);

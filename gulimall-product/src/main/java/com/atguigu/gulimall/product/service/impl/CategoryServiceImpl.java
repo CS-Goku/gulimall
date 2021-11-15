@@ -6,9 +6,11 @@ import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -125,26 +127,72 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
     }
 
+
     @Override
-    public Map<String, List<Catelog2Vo>> selectLevel2(){
+    public Map<String, List<Catelog2Vo>> selectLevel2() {
+        return selectLevel2ForRedisLock();
+
+    }
+
+    //加入分布式锁
+    public Map<String, List<Catelog2Vo>> selectLevel2ForRedisLock() {
+        //加分布式锁占坑
+        String uuid = UUID.randomUUID().toString();//坑1：保证创建和删除的锁是同一个
+        Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid, 300, TimeUnit.SECONDS);//坑2：设置过期时间，防止业务终止造成死锁，没有执行删锁
+        if (lock) {
+            System.out.println("获取到分布式锁成功。。。");
+            //true，占锁成功,执行方法，拿到数据并返回，再释放锁给其他服务竞争
+            Map<String, List<Catelog2Vo>> dataFormDb;
+            try {
+                dataFormDb=getDataFormDb();
+            }finally {//坑3：如果业务执行时间很长，也不能一直等锁过期，最终都是要删除锁
+                //坑4：保证删的是自己的锁，因为就算uuid一样，锁过期了，进行到下一步还是会删别人的锁，所以redis+Lua脚本，保证原子性删除锁
+                String script = "if redis.call(\"get\",KEYS[1]) == ARGV[1] \n" +
+                        "then\n" +
+                        "\treturn redis.call(\"del\",KEYS[1])\n" +
+                        "else\n" +
+                        "    return 0\n" +
+                        "end;";
+                Long lock1 = stringRedisTemplate.execute(new DefaultRedisScript<Long>(script, Long.class), Arrays.asList("lock"), uuid);
+            }
+
+            return dataFormDb;
+        } else {
+            //没有拿到锁，设置自旋，反复重试直到该服务拿到锁
+            //坑5：可以设置休眠时间，没获取到等待一会，别一直自旋
+            System.out.println("获取分布式锁失败。。");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return selectLevel2ForRedisLock();
+        }
+    }
+
+    //加入redis缓存
+    private Map<String, List<Catelog2Vo>> getDataFormDb() {
         //直接从redis缓存中拿
         String catalogJSON = stringRedisTemplate.opsForValue().get("catalogJSON");
-        if (StringUtils.isEmpty(catalogJSON)){
+        if (StringUtils.isEmpty(catalogJSON)) {
             //缓存中没有就从数据库拿
-            Map<String, List<Catelog2Vo>> stringListMap = selectLevel2ForDb();
+            Map<String, List<Catelog2Vo>> stringListMap1 = selectLevel2ForDb();
+            System.out.println("从数据库拿了数据。。");
             //拿完放到redis中,value需要string字符串，统一把数据变为json字符串，因为json跨语言跨平台
-            String s = JSON.toJSONString(stringListMap);
-            stringRedisTemplate.opsForValue().set("catalogJSON",s);
+            String s = JSON.toJSONString(stringListMap1);
+            stringRedisTemplate.opsForValue().set("catalogJSON", s);
 
             //返回需要到数据
-            return stringListMap;
+            return stringListMap1;
         }
         //继续第一行，因为redis有数据，是个json字符串，所以要转为我们需要的对象
-        Map<String, List<Catelog2Vo>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {});
+        Map<String, List<Catelog2Vo>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {
+        });
 
         return stringListMap;
     }
 
+    //查询数据库二三级分类封装
     public Map<String, List<Catelog2Vo>> selectLevel2ForDb() {
 
         //在缓存中查询
@@ -162,11 +210,11 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
 
         //1、查出所有1级分类
-        List<CategoryEntity> levels1 = getParent_cid(entities,0l);
+        List<CategoryEntity> levels1 = getParent_cid(entities, 0l);
         //2、封装数据
         Map<String, List<Catelog2Vo>> parent_cid = levels1.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
             //1.查询所有2级分类
-            List<CategoryEntity> levels2 = getParent_cid(entities,v.getCatId());
+            List<CategoryEntity> levels2 = getParent_cid(entities, v.getCatId());
             //2.设置Vo
             //    private String catalog1Id;
             //    private List<Object> catalog3List;
@@ -175,16 +223,16 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             List<Catelog2Vo> catelog2Vos = null;
             if (levels2 != null) {
                 catelog2Vos = levels2.stream().map(l2 -> {
-                    Catelog2Vo catelog2Vo = new Catelog2Vo(v.getCatId().toString(),null, l2.getCatId().toString(), l2.getName());
+                    Catelog2Vo catelog2Vo = new Catelog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName());
 
                     //1、找当前2级分类的3级分类数组
-                    List<CategoryEntity> levels3 = getParent_cid(entities,l2.getCatId());
+                    List<CategoryEntity> levels3 = getParent_cid(entities, l2.getCatId());
                     //2、设置三级分类Vo
                     //        private String catalog2Id;
                     //        private String id;
                     //        private String name;
-                    List<Catelog2Vo.Catelog3Vo> catelog3Vos =null;
-                    if (levels3 != null){
+                    List<Catelog2Vo.Catelog3Vo> catelog3Vos = null;
+                    if (levels3 != null) {
                         catelog3Vos = levels3.stream().map(l3 -> {
                             Catelog2Vo.Catelog3Vo catelog3Vo = new Catelog2Vo.Catelog3Vo(l2.getCatId().toString(), l3.getCatId().toString(), l3.getName());
                             return catelog3Vo;
@@ -207,7 +255,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     }
 
-    private List<CategoryEntity> getParent_cid(List<CategoryEntity> entities,Long parent_cid) {
+    private List<CategoryEntity> getParent_cid(List<CategoryEntity> entities, Long parent_cid) {
         List<CategoryEntity> collect = entities.stream().filter(item -> item.getParentCid() == parent_cid).collect(Collectors.toList());
 //        return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
         return collect;

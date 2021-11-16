@@ -7,6 +7,7 @@ import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -126,20 +127,17 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         categoryBrandRelationService.updateCategory(category.getCatId(), category.getName());
     }
 
+    @Cacheable("{category}")
     @Override
     public List<CategoryEntity> selectLevel1() {
+        System.out.println("123");
         return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
     }
 
 
+    //使用redisson加入分布式锁 简化
     @Override
     public Map<String, List<Catelog2Vo>> selectLevel2() {
-        return selectLevel2ForRedisLock();
-
-    }
-
-    //使用redisson加入分布式锁 简化
-    public Map<String, List<Catelog2Vo>> selectLevel2ForRedisLock() {
         RLock lock = redisson.getLock("catalogJSON-lock");
         lock.lock();
 
@@ -151,7 +149,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         }
 
         return dataFormDb;
+
     }
+
 
     //加入分布式锁--原理
 //    public Map<String, List<Catelog2Vo>> selectLevel2ForRedisLock() {

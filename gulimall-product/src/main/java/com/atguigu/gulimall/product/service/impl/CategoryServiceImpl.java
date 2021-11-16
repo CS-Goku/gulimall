@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import com.atguigu.gulimall.product.service.CategoryBrandRelationService;
 import com.atguigu.gulimall.product.vo.Catelog2Vo;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -37,6 +39,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    private RedissonClient redisson;
     @Autowired
     CategoryBrandRelationService categoryBrandRelationService;
 
@@ -134,41 +138,56 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     }
 
-    //加入分布式锁
+    //使用redisson加入分布式锁 简化
     public Map<String, List<Catelog2Vo>> selectLevel2ForRedisLock() {
-        //加分布式锁占坑
-        String uuid = UUID.randomUUID().toString();//坑1：保证创建和删除的锁是同一个
-        Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid, 300, TimeUnit.SECONDS);//坑2：设置过期时间，防止业务终止造成死锁，没有执行删锁
-        if (lock) {
-            System.out.println("获取到分布式锁成功。。。");
-            //true，占锁成功,执行方法，拿到数据并返回，再释放锁给其他服务竞争
-            Map<String, List<Catelog2Vo>> dataFormDb;
-            try {
-                dataFormDb=getDataFormDb();
-            }finally {//坑3：如果业务执行时间很长，也不能一直等锁过期，最终都是要删除锁
-                //坑4：保证删的是自己的锁，因为就算uuid一样，锁过期了，进行到下一步还是会删别人的锁，所以redis+Lua脚本，保证原子性删除锁
-                String script = "if redis.call(\"get\",KEYS[1]) == ARGV[1] \n" +
-                        "then\n" +
-                        "\treturn redis.call(\"del\",KEYS[1])\n" +
-                        "else\n" +
-                        "    return 0\n" +
-                        "end;";
-                Long lock1 = stringRedisTemplate.execute(new DefaultRedisScript<Long>(script, Long.class), Arrays.asList("lock"), uuid);
-            }
+        RLock lock = redisson.getLock("catalogJSON-lock");
+        lock.lock();
 
-            return dataFormDb;
-        } else {
-            //没有拿到锁，设置自旋，反复重试直到该服务拿到锁
-            //坑5：可以设置休眠时间，没获取到等待一会，别一直自旋
-            System.out.println("获取分布式锁失败。。");
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return selectLevel2ForRedisLock();
+        Map<String, List<Catelog2Vo>> dataFormDb;
+        try {
+            dataFormDb = getDataFormDb();
+        } finally {
+            lock.unlock();
         }
+
+        return dataFormDb;
     }
+
+    //加入分布式锁--原理
+//    public Map<String, List<Catelog2Vo>> selectLevel2ForRedisLock() {
+//        //加分布式锁占坑
+//        String uuid = UUID.randomUUID().toString();//坑1：保证创建和删除的锁是同一个
+//        Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid, 300, TimeUnit.SECONDS);//坑2：设置过期时间，防止业务终止造成死锁，没有执行删锁
+//        if (lock) {
+//            System.out.println("获取到分布式锁成功。。。");
+//            //true，占锁成功,执行方法，拿到数据并返回，再释放锁给其他服务竞争
+//            Map<String, List<Catelog2Vo>> dataFormDb;
+//            try {
+//                dataFormDb=getDataFormDb();
+//            }finally {//坑3：如果业务执行时间很长，也不能一直等锁过期，最终都是要删除锁
+//                //坑4：保证删的是自己的锁，因为就算uuid一样，锁过期了，进行到下一步还是会删别人的锁，所以redis+Lua脚本，保证原子性删除锁
+//                String script = "if redis.call(\"get\",KEYS[1]) == ARGV[1] \n" +
+//                        "then\n" +
+//                        "\treturn redis.call(\"del\",KEYS[1])\n" +
+//                        "else\n" +
+//                        "    return 0\n" +
+//                        "end;";
+//                Long lock1 = stringRedisTemplate.execute(new DefaultRedisScript<Long>(script, Long.class), Arrays.asList("lock"), uuid);
+//            }
+//
+//            return dataFormDb;
+//        } else {
+//            //没有拿到锁，设置自旋，反复重试直到该服务拿到锁
+//            //坑5：可以设置休眠时间，没获取到等待一会，别一直自旋
+//            System.out.println("获取分布式锁失败。。");
+//            try {
+//                Thread.sleep(3000);
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//            return selectLevel2ForRedisLock();
+//        }
+//    }
 
     //加入redis缓存
     private Map<String, List<Catelog2Vo>> getDataFormDb() {

@@ -21,6 +21,7 @@ spring:
     type: redis
     redis:
       time-to-live: 360000
+      cache-null-values: true
 mybatis-plus:
   mapper-locations: classpath:/mapper/**/*.xml
   global-config:

@@ -7,7 +7,10 @@ import com.atguigu.gulimall.product.vo.Catelog2Vo;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -117,6 +120,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @param category
      */
+//    @CacheEvict(value = "category" ,key = "'selectLevel1'")//失效模式，更新了数据库就删除缓存，到下次请求selectLevel1方法又设置好了
+    @Caching(evict =
+            {@CacheEvict(value = "category" ,key = "'selectLevel1'"),
+             @CacheEvict(value = "category" ,key = "'selectLevel2'")})//多操作模式
+    @CacheEvict(value = "catefory",allEntries = true)//删除这个区的所有缓存
+//    @CachePut//双写模式，这里没返回值不适用
     @Transactional//开启事务
     @Override
     public void updateCascade(CategoryEntity category) {
@@ -127,23 +136,29 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         categoryBrandRelationService.updateCategory(category.getCatId(), category.getName());
     }
 
-    @Cacheable("{category}")
+    @Cacheable(value = "category",key = "#root.methodName")
     @Override
     public List<CategoryEntity> selectLevel1() {
-        System.out.println("123");
+        System.out.println("查询一级分类数据");
         return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
+    }
+
+    @Cacheable(value = "category",key = "#root.methodName",sync = true)//简化了加入redis缓存的操作
+    @Override
+    public Map<String, List<Catelog2Vo>> selectLevel2() {
+        System.out.println("查询了23级数据");
+        return selectLevel2ForDb();
     }
 
 
     //使用redisson加入分布式锁 简化
-    @Override
-    public Map<String, List<Catelog2Vo>> selectLevel2() {
+    public Map<String, List<Catelog2Vo>> selectLevel2ForDbWithRedisson() {
         RLock lock = redisson.getLock("catalogJSON-lock");
         lock.lock();
 
         Map<String, List<Catelog2Vo>> dataFormDb;
         try {
-            dataFormDb = getDataFormDb();
+            dataFormDb = selectLevel2ForDbWithRedis();
         } finally {
             lock.unlock();
         }
@@ -190,13 +205,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 //    }
 
     //加入redis缓存
-    private Map<String, List<Catelog2Vo>> getDataFormDb() {
+    private Map<String, List<Catelog2Vo>> selectLevel2ForDbWithRedis() {
         //直接从redis缓存中拿
         String catalogJSON = stringRedisTemplate.opsForValue().get("catalogJSON");
         if (StringUtils.isEmpty(catalogJSON)) {
             //缓存中没有就从数据库拿
             Map<String, List<Catelog2Vo>> stringListMap1 = selectLevel2ForDb();
-            System.out.println("从数据库拿了数据。。");
             //拿完放到redis中,value需要string字符串，统一把数据变为json字符串，因为json跨语言跨平台
             String s = JSON.toJSONString(stringListMap1);
             stringRedisTemplate.opsForValue().set("catalogJSON", s);
@@ -205,13 +219,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             return stringListMap1;
         }
         //继续第一行，因为redis有数据，是个json字符串，所以要转为我们需要的对象
-        Map<String, List<Catelog2Vo>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {
-        });
+        Map<String, List<Catelog2Vo>> stringListMap = JSON.parseObject(catalogJSON, new TypeReference<Map<String, List<Catelog2Vo>>>() {});
 
         return stringListMap;
     }
 
-    //查询数据库二三级分类封装
+    //查询数据库二三级分类封装---业务代码
     public Map<String, List<Catelog2Vo>> selectLevel2ForDb() {
 
         //在缓存中查询

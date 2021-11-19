@@ -1,4 +1,4 @@
-package com.atguigu.gulimall.product.app;
+package com.atguigu.gulimall.product.controller;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -10,33 +10,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.atguigu.gulimall.product.entity.CommentReplayEntity;
-import com.atguigu.gulimall.product.service.CommentReplayService;
+import com.atguigu.gulimall.product.entity.UndoLogEntity;
+import com.atguigu.gulimall.product.service.UndoLogService;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 
 
 
 /**
- * 商品评价回复关系
+ * 
  *
  * @author lufei
  * @email 790002348@qq.com
  * @date 2021-08-08 15:58:03
  */
 @RestController
-@RequestMapping("product/commentreplay")
-public class CommentReplayController {
+@RequestMapping("product/undolog")
+public class UndoLogController {
     @Autowired
-    private CommentReplayService commentReplayService;
+    private UndoLogService undoLogService;
 
     /**
      * 列表
      */
     @RequestMapping("/list")
-    //@RequiresPermissions("product:commentreplay:list")
+    //@RequiresPermissions("product:undolog:list")
     public R list(@RequestParam Map<String, Object> params){
-        PageUtils page = commentReplayService.queryPage(params);
+        PageUtils page = undoLogService.queryPage(params);
 
         return R.ok().put("page", page);
     }
@@ -46,20 +46,20 @@ public class CommentReplayController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    //@RequiresPermissions("product:commentreplay:info")
+    //@RequiresPermissions("product:undolog:info")
     public R info(@PathVariable("id") Long id){
-		CommentReplayEntity commentReplay = commentReplayService.getById(id);
+		UndoLogEntity undoLog = undoLogService.getById(id);
 
-        return R.ok().put("commentReplay", commentReplay);
+        return R.ok().put("undoLog", undoLog);
     }
 
     /**
      * 保存
      */
     @RequestMapping("/save")
-    //@RequiresPermissions("product:commentreplay:save")
-    public R save(@RequestBody CommentReplayEntity commentReplay){
-		commentReplayService.save(commentReplay);
+    //@RequiresPermissions("product:undolog:save")
+    public R save(@RequestBody UndoLogEntity undoLog){
+		undoLogService.save(undoLog);
 
         return R.ok();
     }
@@ -68,9 +68,9 @@ public class CommentReplayController {
      * 修改
      */
     @RequestMapping("/update")
-    //@RequiresPermissions("product:commentreplay:update")
-    public R update(@RequestBody CommentReplayEntity commentReplay){
-		commentReplayService.updateById(commentReplay);
+    //@RequiresPermissions("product:undolog:update")
+    public R update(@RequestBody UndoLogEntity undoLog){
+		undoLogService.updateById(undoLog);
 
         return R.ok();
     }
@@ -79,9 +79,9 @@ public class CommentReplayController {
      * 删除
      */
     @RequestMapping("/delete")
-    //@RequiresPermissions("product:commentreplay:delete")
+    //@RequiresPermissions("product:undolog:delete")
     public R delete(@RequestBody Long[] ids){
-		commentReplayService.removeByIds(Arrays.asList(ids));
+		undoLogService.removeByIds(Arrays.asList(ids));
 
         return R.ok();
     }

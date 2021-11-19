@@ -1,4 +1,4 @@
-package com.atguigu.gulimall.product.app;
+package com.atguigu.gulimall.product.controller;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -10,33 +10,33 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.atguigu.gulimall.product.entity.UndoLogEntity;
-import com.atguigu.gulimall.product.service.UndoLogService;
+import com.atguigu.gulimall.product.entity.SpuCommentEntity;
+import com.atguigu.gulimall.product.service.SpuCommentService;
 import com.atguigu.common.utils.PageUtils;
 import com.atguigu.common.utils.R;
 
 
 
 /**
- * 
+ * 商品评价
  *
  * @author lufei
  * @email 790002348@qq.com
  * @date 2021-08-08 15:58:03
  */
 @RestController
-@RequestMapping("product/undolog")
-public class UndoLogController {
+@RequestMapping("product/spucomment")
+public class SpuCommentController {
     @Autowired
-    private UndoLogService undoLogService;
+    private SpuCommentService spuCommentService;
 
     /**
      * 列表
      */
     @RequestMapping("/list")
-    //@RequiresPermissions("product:undolog:list")
+    //@RequiresPermissions("product:spucomment:list")
     public R list(@RequestParam Map<String, Object> params){
-        PageUtils page = undoLogService.queryPage(params);
+        PageUtils page = spuCommentService.queryPage(params);
 
         return R.ok().put("page", page);
     }
@@ -46,20 +46,20 @@ public class UndoLogController {
      * 信息
      */
     @RequestMapping("/info/{id}")
-    //@RequiresPermissions("product:undolog:info")
+    //@RequiresPermissions("product:spucomment:info")
     public R info(@PathVariable("id") Long id){
-		UndoLogEntity undoLog = undoLogService.getById(id);
+		SpuCommentEntity spuComment = spuCommentService.getById(id);
 
-        return R.ok().put("undoLog", undoLog);
+        return R.ok().put("spuComment", spuComment);
     }
 
     /**
      * 保存
      */
     @RequestMapping("/save")
-    //@RequiresPermissions("product:undolog:save")
-    public R save(@RequestBody UndoLogEntity undoLog){
-		undoLogService.save(undoLog);
+    //@RequiresPermissions("product:spucomment:save")
+    public R save(@RequestBody SpuCommentEntity spuComment){
+		spuCommentService.save(spuComment);
 
         return R.ok();
     }
@@ -68,9 +68,9 @@ public class UndoLogController {
      * 修改
      */
     @RequestMapping("/update")
-    //@RequiresPermissions("product:undolog:update")
-    public R update(@RequestBody UndoLogEntity undoLog){
-		undoLogService.updateById(undoLog);
+    //@RequiresPermissions("product:spucomment:update")
+    public R update(@RequestBody SpuCommentEntity spuComment){
+		spuCommentService.updateById(spuComment);
 
         return R.ok();
     }
@@ -79,9 +79,9 @@ public class UndoLogController {
      * 删除
      */
     @RequestMapping("/delete")
-    //@RequiresPermissions("product:undolog:delete")
+    //@RequiresPermissions("product:spucomment:delete")
     public R delete(@RequestBody Long[] ids){
-		undoLogService.removeByIds(Arrays.asList(ids));
+		spuCommentService.removeByIds(Arrays.asList(ids));
 
         return R.ok();
     }

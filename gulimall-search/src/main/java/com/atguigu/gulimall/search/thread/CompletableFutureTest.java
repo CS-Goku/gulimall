@@ -9,6 +9,7 @@ public class CompletableFutureTest {
 
     public static ExecutorService executor = Executors.newFixedThreadPool(10);
 
+
     public static void main(String[] args) throws ExecutionException, InterruptedException {
         System.out.println("main...start...");
         /**

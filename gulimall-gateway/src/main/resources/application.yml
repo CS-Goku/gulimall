@@ -60,6 +60,7 @@ spring:
 
 
 
+
   ## 前端项目，/api前缀。开来到网关后断言先匹配到，过滤器修改url，比如跳转到renren微服务，所以要注意renren后端项目也注册到 nacos里
 ## http://localhost:88/api/captcha.jpg   http://localhost:8081/renren-fast/captcha.jpg
 ## http://localhost:88/api/product/category/list/tree http://localhost:10000/product/category/list/tree

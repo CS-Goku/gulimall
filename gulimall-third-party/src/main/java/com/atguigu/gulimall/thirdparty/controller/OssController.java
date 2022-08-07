@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -25,14 +26,17 @@ public class OssController {
     //从application.yml中获取信息
     @Value("${spring.cloud.alicloud.oss.endpoint}")
     private String endpoint;
+
     @Value("${spring.cloud.alicloud.oss.bucket}")
     private String bucket;
+
     @Value("${spring.cloud.alicloud.access-key}")
     private String accessId;
+
     @RequestMapping("/oss/policy")
     public R policy(){
 
-        //https://gulimall-xixihaha.oss-cn-hangzhou.aliyuncs.com/%E8%AF%81.JPG
+
         String host = "https://" + bucket + "." + endpoint; // host的格式为 bucketname.endpoint
         // callbackUrl为上传回调服务器的URL，请将下面的IP和Port配置为您自己的真实信息。
 //        String callbackUrl = "http://88.88.88.88:8888";
@@ -50,7 +54,7 @@ public class OssController {
             policyConds.addConditionItem(MatchMode.StartWith, PolicyConditions.COND_KEY, dir);
 
             String postPolicy = ossClient.generatePostPolicy(expiration, policyConds);
-            byte[] binaryData = postPolicy.getBytes("utf-8");
+            byte[] binaryData = postPolicy.getBytes(StandardCharsets.UTF_8);
             String encodedPolicy = BinaryUtil.toBase64String(binaryData);
             String postSignature = ossClient.calculatePostSignature(postPolicy);
 

@@ -11,7 +11,6 @@
 
     <artifactId>gulimall-common</artifactId>
     <description>每一个微服务公共的依赖，bean，工具类等</description>
-
     <dependencies>
         <!--        mybatis-plus-->
         <dependency>

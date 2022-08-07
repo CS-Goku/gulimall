@@ -15,6 +15,7 @@
     <description>谷粒商城-检索服务</description>
     <properties>
         <java.version>1.8</java.version>
+        <!--指定版本-->
         <elasticsearch.version>7.4.2</elasticsearch.version>
         <spring-cloud.version>Greenwich.SR3</spring-cloud.version>
     </properties>
@@ -34,6 +35,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!--ES-->
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
             <artifactId>elasticsearch-rest-high-level-client</artifactId>

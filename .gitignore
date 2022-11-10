@@ -9,7 +9,7 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
-
+gulimall.iml
 **/mvnw
 **/mvnw.cmd
 **/.mvn
